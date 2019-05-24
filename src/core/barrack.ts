@@ -4,7 +4,7 @@ class RamDataSource {
     private map: Map<string, Map<string, string>>
 
     public constructor() {
-        this.map = new Map();
+        this.map = new Map()
     }
 
     get(dbName: string, id: any): any {
@@ -14,54 +14,64 @@ class RamDataSource {
         }
 
         if (typeof id !== 'string') {
-            id = JSON.stringify(id);
+            id = JSON.stringify(id)
         }
-        return JSON.parse(db.get(id) || "undefined");
+        return JSON.parse(db.get(id) || 'undefined')
     }
 
     set(dbName: string, id: any, value: any): any {
         let db = this.map.get(dbName)
         if (db === undefined) {
-            db = new Map();
-            this.map.set(dbName, db);
+            db = new Map()
+            this.map.set(dbName, db)
         }
 
         if (typeof id !== 'string') {
-            id = JSON.stringify(id);
+            id = JSON.stringify(id)
         }
-        return db.set(id, JSON.stringify(value));
+        return db.set(id, JSON.stringify(value))
     }
 }
 
 class Barrack extends RamDataSource
     implements mkm.MetaDataSource, mkm.EntityDataSource, mkm.UserDataSource, mkm.GroupDataSource {
 
+    private static _instance: Barrack
+
+    public constructor() {
+        if (Barrack._instance) {
+            super()
+            Barrack._instance = this
+        }
+        return Barrack._instance
+    }
+
     public addAccount(account: mkm.Account) {
-        this.set("account", account.identifier.address, account);
+        this.set('account', account.identifier.address, account)
     }
 
     public getAccount(identifier: mkm.ID) {
-        return this.get("account", identifier);
+        return this.get('account', identifier)
     }
 
     public addUser(user: mkm.User) {
-        this.set("user", user.identifier.address, user);
+        this.set('user', user.identifier.address, user)
     }
 
     public getUser(identifier: mkm.ID) {
-        return this.get("user", identifier);
+        return this.get('user', identifier)
     }
 
     public addGroup(group: mkm.Group) {
-        this.set("group", group.identifier.address, group);
+        this.set('group', group.identifier.address, group)
     }
 
     public getGroup(identifier: mkm.ID) {
-        return this.get("group", identifier);
+        return this.get('group', identifier)
     }
 
     public addMeta(meta: mkm.Meta, identifier: mkm.ID) {
-        this.set("meta", identifier.address, meta)
+        this.set('meta', identifier.address, meta)
     }
 
     public getMeta(key: mkm.ID | mkm.Entity): mkm.Meta {
@@ -99,3 +109,5 @@ class Barrack extends RamDataSource
         return this.get('name', entity)
     }
 }
+
+export { Barrack }
