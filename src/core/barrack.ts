@@ -46,31 +46,31 @@ class Barrack extends RamDataSource
         return Barrack._instance
     }
 
-    public addAccount(account: mkm.Account) {
+    public addAccount(account: mkm.Account): void {
         this.set('account', account.identifier.address, account)
     }
 
-    public getAccount(identifier: mkm.ID) {
+    public getAccount(identifier: mkm.ID): mkm.Account {
         return this.get('account', identifier)
     }
 
-    public addUser(user: mkm.User) {
+    public addUser(user: mkm.User): void {
         this.set('user', user.identifier.address, user)
     }
 
-    public getUser(identifier: mkm.ID) {
+    public getUser(identifier: mkm.ID): mkm.User {
         return this.get('user', identifier)
     }
 
-    public addGroup(group: mkm.Group) {
+    public addGroup(group: mkm.Group): void {
         this.set('group', group.identifier.address, group)
     }
 
-    public getGroup(identifier: mkm.ID) {
+    public getGroup(identifier: mkm.ID): mkm.Group {
         return this.get('group', identifier)
     }
 
-    public addMeta(meta: mkm.Meta, identifier: mkm.ID) {
+    public addMeta(meta: mkm.Meta, identifier: mkm.ID): void {
         this.set('meta', identifier.address, meta)
     }
 
@@ -81,15 +81,15 @@ class Barrack extends RamDataSource
         return this.get('meta', key)
     }
 
-    public getFounder(group: mkm.Group): mkm.ID {
+    public getFounder(group: mkm.ID): mkm.ID {
         return this.get('founder', group)
     }
 
-    public getOwner(group: mkm.Group): mkm.ID {
+    public getOwner(group: mkm.ID): mkm.ID {
         return this.get('owner', group)
     }
 
-    public getMembers(group: mkm.Group): mkm.ID[] {
+    public getMembers(group: mkm.ID): mkm.ID[] {
         return this.get('members', group)
     }
 
