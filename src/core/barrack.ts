@@ -13,6 +13,13 @@ class RamDataSource {
             return undefined
         }
 
+        // mkm.Entity
+        if (id.identifier) {
+            id = id.identifier.string
+        } else if (id.string) {
+            // mkm.ID
+            id = id.string
+        }
         if (typeof id !== 'string') {
             id = JSON.stringify(id)
         }
@@ -26,6 +33,13 @@ class RamDataSource {
             this.map.set(dbName, db)
         }
 
+        if (id.identifier) {
+            // mkm.Entity
+            id = id.identifier.string
+        } else if (id.string) {
+            // mkm.ID
+            id = id.string
+        }
         if (typeof id !== 'string') {
             id = JSON.stringify(id)
         }
@@ -46,20 +60,20 @@ class Barrack extends RamDataSource
         return Barrack._instance
     }
 
-    public addAccount(account: mkm.Account): void {
-        this.set('account', account.identifier.address, account)
-    }
-
-    public getAccount(identifier: mkm.ID): mkm.Account {
-        return this.get('account', identifier)
-    }
-
     public addUser(user: mkm.User): void {
         this.set('user', user.identifier.address, user)
     }
 
     public getUser(identifier: mkm.ID): mkm.User {
         return this.get('user', identifier)
+    }
+
+    public addLocalUser(user: mkm.LocalUser): void {
+        this.set('local_user', user.identifier.address, user)
+    }
+
+    public getLocalUser(identifier: mkm.ID): mkm.LocalUser {
+        return this.get('local_user', identifier)
     }
 
     public addGroup(group: mkm.Group): void {
@@ -81,31 +95,31 @@ class Barrack extends RamDataSource
         return this.get('meta', key)
     }
 
-    public getFounder(group: mkm.ID): mkm.ID {
+    public getFounder(group: mkm.Group | mkm.ID): mkm.ID {
         return this.get('founder', group)
     }
 
-    public getOwner(group: mkm.ID): mkm.ID {
+    public getOwner(group: mkm.Group | mkm.ID): mkm.ID {
         return this.get('owner', group)
     }
 
-    public getMembers(group: mkm.ID): mkm.ID[] {
+    public getMembers(group: mkm.Group | mkm.ID): mkm.ID[] {
         return this.get('members', group)
     }
 
-    public getPrivateKey(user: mkm.User): mkm.PrivateKey {
+    public getPrivateKey(user: mkm.LocalUser | mkm.User | mkm.ID): mkm.PrivateKey {
         return this.get('privateKey', user)
     }
 
-    public getContacts(user: mkm.User): mkm.Account[] {
+    public getContacts(user: mkm.LocalUser | mkm.User | mkm.ID): mkm.ID[] {
         return this.get('contacts', user)
     }
 
-    public getProfile(entity: mkm.Entity): mkm.Profile {
+    public getProfile(entity: mkm.LocalUser | mkm.User | mkm.ID): mkm.Profile {
         return this.get('profile', entity)
     }
 
-    public getName(entity: mkm.Entity): string {
+    public getName(entity: mkm.Entity | mkm.ID): string {
         return this.get('name', entity)
     }
 }
