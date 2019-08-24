@@ -180,22 +180,7 @@ class TransceiverCrypto implements dkd.Crypto {
 
     private getPublicKeyFromUser(userId: string): PublicKey {
         let user = this._barrack.getUser(mkm.ID.fromString(userId))
-        if (!user) {
-            throw new CoreError(StorageError.USER_NOT_FOUND)
-        }
-        if (user.publicKey) {
-            return user.publicKey
-        }
-
-        // TODO optimize to user.publicKey
-        let profile = this._barrack.getProfile(user)
-        let encryptKey
-        if (profile) {
-            encryptKey = profile.key
-        } else {
-            encryptKey = this._barrack.getMeta(user).publicKey
-        }
-        return encryptKey
+        return user.publicKey
     }
     
     encryptContent(iMsg: dkd.InstantMessage, content: dkd.Content, key: string): string {
@@ -210,9 +195,6 @@ class TransceiverCrypto implements dkd.Crypto {
 
         // decrypt key data with the receiver's private key
         let localUser = this._barrack.getLocalUser(sMsg.envelope.receiver)
-        if (!localUser) {
-            throw new CoreError(StorageError.USER_NOT_FOUND)
-        }
         let key = localUser.privateKey.decrypt(Buffer.from(encryptedKey, 'base64'))
         return key.toString('utf-8')
     }
@@ -230,9 +212,6 @@ class TransceiverCrypto implements dkd.Crypto {
 
     sign(sMsg: dkd.SecureMessage, data: string, sender: string): string {
         let user = this._barrack.getLocalUser(mkm.ID.fromString(sender))
-        if (user == null) {
-            throw new CoreError(StorageError.USER_NOT_FOUND)
-        }
         return user.privateKey.sign(Buffer.from(data, 'utf-8')).toString('base64')
     }
 
