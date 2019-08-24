@@ -14,7 +14,7 @@ class Transceiver {
     constructor(crypto: dkd.Crypto, delegate: TransceiverDelegate) {
         this._delegate = delegate
         this._transform = new dkd.Transform(crypto)
-        this._barrack = new Barrack()
+        this._barrack = Barrack.instance
         this._sessionKeys = new SessionKeys()
     }
 
@@ -165,7 +165,7 @@ class Transceiver {
 }
 
 class TransceiverCrypto implements dkd.Crypto {
-    private _barrack: Barrack = new Barrack()
+    private _barrack: Barrack = Barrack.instance
 
     encryptKey(iMsg: dkd.InstantMessage, key: string, receiver: string): string {
         TransceiverCrypto.checkNotBroadcast(iMsg)
@@ -192,15 +192,8 @@ class TransceiverCrypto implements dkd.Crypto {
         let encryptKey
         if (profile) {
             encryptKey = profile.key
-        }
-        if (!encryptKey) {
-            let meta = this._barrack.getMeta(user)
-            if (meta) {
-                encryptKey = meta.publicKey
-            }
-        }
-        if (!encryptKey) {
-            throw new CoreError(StorageError.KEY_NOT_FOUND)
+        } else {
+            encryptKey = this._barrack.getMeta(user).publicKey
         }
         return encryptKey
     }
@@ -236,11 +229,16 @@ class TransceiverCrypto implements dkd.Crypto {
     }
 
     sign(sMsg: dkd.SecureMessage, data: string, sender: string): string {
-        throw new Error("Method not implemented.");
+        let user = this._barrack.getLocalUser(mkm.ID.fromString(sender))
+        if (user == null) {
+            throw new CoreError(StorageError.USER_NOT_FOUND)
+        }
+        return user.privateKey.sign(Buffer.from(data, 'utf-8')).toString('base64')
     }
 
     verify(rMsg: dkd.ReliableMessage, data: string, signature: string, sender: string): boolean {
-        throw new Error("Method not implemented.");
+        let user = this._barrack.getUser(mkm.ID.fromString(sender))
+        return user.publicKey.verify(Buffer.from(data, 'utf-8'), Buffer.from(signature, 'base64'))
     }
 
     private static isBroadcast(msg: dkd.Message) {

@@ -19,7 +19,13 @@ class ArgumentError {
 
 class StorageError {
     static readonly USER_NOT_FOUND = 20000;
-    static readonly KEY_NOT_FOUND = 20001;
+    static readonly LOCAL_USER_NOT_FOUND = 20001;
+    static readonly GROUP_NOT_FOUND = 20002;
+    static readonly META_NOT_FOUND = 20003;
+    static readonly FOUNDER_NOT_FOUND = 20004;
+    static readonly OWNER_NOT_FOUND = 20005;
+    static readonly PRIVATE_KEY_NOT_FOUND = 20006;
+    static readonly PROFILE_NOT_FOUND = 20007;
 }
 
 export { CoreError, ArgumentError, StorageError }
