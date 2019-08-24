@@ -204,7 +204,7 @@ class TransceiverCrypto implements dkd.Crypto {
         let contentString = symmKey.decrypt(Buffer.from(encryptedContent, 'base64')).toString('utf-8')
         let object = JSON.parse(contentString)
         // TODO refactor
-        if (!object || !object.type || !object.serialNumber || !object.group) {
+        if (!object || !object.type || !object.serialNumber) {
             throw new CoreError(ArgumentError.INVALID_CONTENT)
         }
         return object as dkd.Content
