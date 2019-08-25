@@ -18,8 +18,8 @@ enum HandShakeCommandState {
 }
 
 interface HandShakeCommand extends Command {
-        message: string | null
-        sessionKey: string | null
+        message?: string
+        sessionKey?: string
         state: HandShakeCommandState
 }
 

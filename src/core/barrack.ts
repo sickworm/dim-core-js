@@ -56,7 +56,11 @@ class RamDataSource implements DataSource {
 class Barrack
     implements mkm.MetaDataSource, mkm.EntityDataSource, mkm.UserDataSource, mkm.GroupDataSource {
 
-    public static instance: Barrack = new Barrack()
+    private static _instance = new Barrack()
+
+    static getInstance(): Barrack {
+        return Barrack._instance
+    }
     
     private _implement: DataSource
 

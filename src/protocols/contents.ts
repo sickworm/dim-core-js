@@ -23,29 +23,86 @@ interface TextContent extends dkd.Content {
     text: string
 }
 
-interface PageContent extends dkd.Content {
+interface PageContentData {
     url: string
     title: string
     desc: string
     icon: string // base64
 }
 
-interface FileContent extends dkd.Content {
+interface PageContent extends dkd.Content, PageContentData {
+}
+
+interface FileContentData {
     url: string
     data: string // base64
     fileName: string
     password: string // symmetric key to decrypt the encrypted data from URL
 }
 
+interface FileContent extends dkd.Content, FileContentData {
+}
+
 interface AudioContent extends FileContent {
 }
 
-interface ImageContent extends FileContent {
+interface ImageContentData extends FileContentData {
     thumbnail: String
 }
 
-interface VideoContent extends FileContent {
-    snapshot: string // base64
+interface ImageContent extends dkd.Content, ImageContentData {
 }
 
-export { }
+interface VideoContentData extends FileContentData {
+    snapshot: string // url
+}
+
+interface VideoContent extends dkd.Content, ImageContentData {
+}
+
+module Content {
+    export function text(text: string): TextContent {
+        return {
+            type: dkd.MessageType.Text,
+            serialNumber: 123,
+            text
+        }
+    }
+
+    export function page(pageData: PageContentData): PageContent {
+        return Object.assign({
+            type: dkd.MessageType.Text,
+            serialNumber: 123,
+        }, pageData)
+    }
+
+    export function file(fileData: FileContentData): FileContent {
+        return Object.assign({
+            type: dkd.MessageType.File,
+            serialNumber: 123,
+        }, fileData)
+    }
+
+    export function audio(fileData: FileContentData): FileContent {
+        return Object.assign({
+            type: dkd.MessageType.Audio,
+            serialNumber: 123,
+        }, fileData)
+    }
+
+    export function image(fileData: ImageContentData): FileContent {
+        return Object.assign({
+            type: dkd.MessageType.Image,
+            serialNumber: 123,
+        }, fileData)
+    }
+
+    export function video(fileData: VideoContentData): FileContent {
+        return Object.assign({
+            type: dkd.MessageType.Video,
+            serialNumber: 123,
+        }, fileData)
+    }
+}
+
+export { Content, TextContent, FileContent, AudioContent, ImageContent, VideoContent }

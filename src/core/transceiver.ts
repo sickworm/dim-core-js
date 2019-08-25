@@ -11,11 +11,11 @@ class Transceiver {
     private _barrack: Barrack
     private _sessionKeys: SessionKeys
 
-    constructor(crypto: dkd.Crypto, delegate: TransceiverDelegate) {
+    constructor(delegate: TransceiverDelegate) {
         this._delegate = delegate
-        this._transform = new dkd.Transform(crypto)
-        this._barrack = Barrack.instance
-        this._sessionKeys = new SessionKeys()
+        this._transform = new dkd.Transform(new TransceiverCrypto())
+        this._barrack = Barrack.getInstance()
+        this._sessionKeys = SessionKeys.getInstance()
     }
 
     /**
@@ -165,7 +165,7 @@ class Transceiver {
 }
 
 class TransceiverCrypto implements dkd.Crypto {
-    private _barrack: Barrack = Barrack.instance
+    private _barrack: Barrack = Barrack.getInstance()
 
     encryptKey(iMsg: dkd.InstantMessage, key: string, receiver: string): string {
         TransceiverCrypto.checkNotBroadcast(iMsg)
@@ -248,16 +248,6 @@ interface TransceiverDelegate {
      * @return NO on data/delegate error
      */
     sendPackage(data: Buffer): Promise<void>
-
-    /**
-     *  Update/create cipher key for encrypt message content
-     *
-     * @param sender - user identifier
-     * @param receiver - contact/group identifier
-     * @param reusedKey - old key (nullable)
-     * @return new key
-     */
-    reuseCipherKey(sender: mkm.ID, receiver: mkm.ID, reusedKey: mkm.SymmKey): mkm.SymmKey
 
     /**
      *  Upload encrypted data to CDN

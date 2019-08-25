@@ -1,16 +1,16 @@
 import * as mkm from "dim-mkm-js"
 
-class SessionKeys extends Map<string, Map<string, mkm.SymmKey>> {
-    private static _instance: SessionKeys
+class SessionKeys {
+    private static _instance = new SessionKeys()
 
+    static getInstance(): SessionKeys {
+        return SessionKeys._instance
+    }
+
+    _map: Map<string, Map<string, mkm.SymmKey>> = new Map()
     currentUser?: mkm.User
 
-    public constructor() {
-        if (!SessionKeys._instance) {
-            super()
-            SessionKeys._instance = this
-        }
-        return SessionKeys._instance
+    private constructor() {
     }
 
     public getKey(sender: mkm.Address | mkm.ID, receiver: mkm.Address | mkm.ID): mkm.SymmKey {
@@ -21,7 +21,7 @@ class SessionKeys extends Map<string, Map<string, mkm.SymmKey>> {
             receiver = receiver.address
         }
         
-        let senderKeys = this.get(sender.string)
+        let senderKeys = this._map.get(sender.string)
         if (!senderKeys) {
             throw new Error(`session key not exists for sender: ${sender.string}`)
         }
@@ -33,10 +33,10 @@ class SessionKeys extends Map<string, Map<string, mkm.SymmKey>> {
     }
 
     public setKey(key: mkm.SymmKey, sender: mkm.Address, receiver: mkm.Address) {
-        let senderKeys = this.get(sender.string)
+        let senderKeys = this._map.get(sender.string)
         if (!senderKeys) {
             senderKeys = new Map()
-            this.set(sender.string, senderKeys)
+            this._map.set(sender.string, senderKeys)
         }
         senderKeys.set(receiver.string, key)
     }
