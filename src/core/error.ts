@@ -26,6 +26,8 @@ class StorageError {
     static readonly OWNER_NOT_FOUND = 20005;
     static readonly PRIVATE_KEY_NOT_FOUND = 20006;
     static readonly PROFILE_NOT_FOUND = 20007;
+    static readonly MEMBERS_NOT_FOUND = 20008;
+    static readonly SESSION_KEY_NOT_FOUND = 20009;
 }
 
 export { CoreError, ArgumentError, StorageError }

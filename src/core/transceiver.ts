@@ -2,20 +2,19 @@ import * as dkd from 'dim-dkd-js'
 import * as mkm from 'dim-mkm-js'
 import { CoreError, ArgumentError, StorageError } from './error'
 import { Barrack } from './barrack';
-import { SessionKeys } from './session_keys';
 import { AesSymmKey, PublicKey } from 'dim-mkm-js';
+import { deprecate } from 'util';
+import { verify } from 'crypto';
+import { Protocol} from './protocol'
 
-class Transceiver {
+class Transceiver extends Protocol {
     private _transform: dkd.Transform
     private _delegate: TransceiverDelegate
-    private _barrack: Barrack
-    private _sessionKeys: SessionKeys
 
     constructor(delegate: TransceiverDelegate) {
+        super()
         this._delegate = delegate
-        this._transform = new dkd.Transform(new TransceiverCrypto())
-        this._barrack = Barrack.getInstance()
-        this._sessionKeys = SessionKeys.getInstance()
+        this._transform = new dkd.Transform(this)
     }
 
     /**
@@ -61,34 +60,37 @@ class Transceiver {
      */
     encryptAndSignMessage(iMsg: dkd.InstantMessage): dkd.ReliableMessage {
         let receiver = mkm.ID.fromString(iMsg.receiver)
-        let groupId = iMsg.content.group && mkm.ID.fromString(iMsg.content.group)
+        let sender = mkm.ID.fromString(iMsg.sender);
 
-        if (groupId) {
-            // if 'group' exists and the 'receiver' is a group ID,
-            // they must be equal
+        let group = null
+        if (receiver.type.isGroup()) {
+            group = this._barrack.getGroup(receiver)
         } else {
-            if (receiver.type.isGroup()) {
-                groupId = receiver
+            let groupId = iMsg.content.group
+            if (groupId) {
+                group = this._barrack.getGroup(groupId)
             }
         }
 
         // 1. encrypt 'content' to 'data' for receiver
-        let sMsg;
-        if (groupId) {
+        let sMsg
+        if (group == null) {
+            // personal message
+            sMsg = this._transform.encrypt(iMsg, this.getSymmetricKey(sender, receiver).data)
+        } else {
+            // group message
+            let groupId = group.identifier
             let members = []
             if (receiver.type.isCommunicator()) {
                 members.push(receiver)
             } else {
                 let group = this._barrack.getGroup(groupId)
                 let members = this._barrack.getMembers(groupId)
-                if (!members) {
-                    throw Error(`no memebers for group ${groupId}`)
-                }
             }
-            sMsg = this._transform.encrypt(iMsg, this.getKey(groupId).data, members.map(m => m.toString()))
-        } else {
-            sMsg = this._transform.encrypt(iMsg, this.getKey(receiver).data)
+            sMsg = this._transform.encrypt(iMsg, this.getSymmetricKey(sender, groupId).data, members.map(m => m.toString()))
         }
+
+        // 2. sign 'data' by sender
         return this._transform.sign(sMsg)
     }
 
@@ -100,8 +102,10 @@ class Transceiver {
      * @return InstantMessage object
      * @throws IOException when saving meta
      * @throws ClassNotFoundException when creating meta
+     * 
+     * @deprecate
      */
-    verifyAndDecryptMessage(rMsg: dkd.ReliableMessage, users: mkm.User[]): dkd.InstantMessage {
+    verifyAndDecryptMessageDeprecate(rMsg: dkd.ReliableMessage, users: mkm.User[]): dkd.InstantMessage {
         let sender = mkm.ID.fromString(rMsg.sender)
         let receiver = mkm.ID.fromString(rMsg.receiver)
 
@@ -147,95 +151,14 @@ class Transceiver {
             // the secret inside the content is the real message
             let content = iMsg.content.forward
             rMsg = content.forwardMessage
-            return this.verifyAndDecryptMessage(rMsg, users)
+            return this.verifyAndDecryptMessageDeprecate(rMsg, users)
         }
 
         return iMsg
     }
 
-
-    private getKey(receiver: mkm.ID) {
-        let user = this._sessionKeys.currentUser
-        if (!user) {
-            throw Error('sessionKey currentUser not set')
-        }
-        let sender = user.identifier
-        return this._sessionKeys.getKey(sender, receiver)
-    }
-}
-
-class TransceiverCrypto implements dkd.Crypto {
-    private _barrack: Barrack = Barrack.getInstance()
-
-    encryptKey(iMsg: dkd.InstantMessage, key: string, receiver: string): string {
-        TransceiverCrypto.checkNotBroadcast(iMsg)
-        // TODO: check whether support reused key
-        
-        // encrypt with receiver's public key
-        let data = Buffer.from(key, 'utf-8')
-
-        let encryptKey = this.getPublicKeyFromUser(receiver)
-        return encryptKey.encrypt(data).toString('base64')
-    }
-
-    private getPublicKeyFromUser(userId: string): PublicKey {
-        let user = this._barrack.getUser(mkm.ID.fromString(userId))
-        return user.publicKey
-    }
-    
-    encryptContent(iMsg: dkd.InstantMessage, content: dkd.Content, key: string): string {
-        let symmKey = AesSymmKey.fromString(key)
-        return symmKey.encrypt(Buffer.from(JSON.stringify(content), 'utf-8')).toString('base64')
-    }
-
-    decryptKey(sMsg: dkd.SecureMessage, encryptedKey: string, sender: string, receiver: string, group: string | undefined): string {
-        TransceiverCrypto.checkNotBroadcast(sMsg)
-        let from = mkm.ID.fromString(sender)
-        let to = mkm.ID.fromString(receiver)
-
-        // decrypt key data with the receiver's private key
-        let localUser = this._barrack.getLocalUser(sMsg.envelope.receiver)
-        let key = localUser.privateKey.decrypt(Buffer.from(encryptedKey, 'base64'))
-        return key.toString('utf-8')
-    }
-
-    decryptContent(sMsg: dkd.SecureMessage, encryptedContent: string, key: string): dkd.Content {
-        let symmKey = mkm.AesSymmKey.fromString(key)
-        let contentString = symmKey.decrypt(Buffer.from(encryptedContent, 'base64')).toString('utf-8')
-        let object = JSON.parse(contentString)
-        // TODO refactor
-        if (!object || !object.type || !object.serialNumber) {
-            throw new CoreError(ArgumentError.INVALID_CONTENT)
-        }
-        return object as dkd.Content
-    }
-
-    sign(sMsg: dkd.SecureMessage, data: string, sender: string): string {
-        let user = this._barrack.getLocalUser(mkm.ID.fromString(sender))
-        return user.privateKey.sign(Buffer.from(data, 'utf-8')).toString('base64')
-    }
-
-    verify(rMsg: dkd.ReliableMessage, data: string, signature: string, sender: string): boolean {
-        let user = this._barrack.getUser(mkm.ID.fromString(sender))
-        return user.publicKey.verify(Buffer.from(data, 'utf-8'), Buffer.from(signature, 'base64'))
-    }
-
-    private static isBroadcast(msg: dkd.Message) {
-        let receiver
-        if (msg.group) {
-            receiver = mkm.ID.fromString(msg.group)
-        }
-        if (!receiver) {
-            receiver = mkm.ID.fromString(msg.receiver)
-        }
-        return receiver.address.isBoardcast()
-    }
-
-    private static checkNotBroadcast(msg: dkd.Message) {
-        if (TransceiverCrypto.isBroadcast(msg)) {
-            // broadcast message has no key
-            throw new CoreError(ArgumentError.BOARDCAST_CANT_ENCRYPT)
-        }
+    verifyAndDecryptMessage(rMsg: dkd.ReliableMessage): dkd.InstantMessage {
+        return this._transform.decrypt(this._transform.verify(rMsg))
     }
 }
 

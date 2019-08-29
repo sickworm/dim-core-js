@@ -9,6 +9,7 @@ interface HistoryCommand extends Command {
     time: number
 }
 
+// TODO add readOnly for all data structure in dim-core
 enum HandShakeCommandState {
     INIT    = 0,
     START   = 1,  // C -> S, without session key(or session expired)
