@@ -45,7 +45,7 @@ class Protocol implements dkd.Crypto {
         let to = mkm.ID.fromString(receiver)
 
         // decrypt key data with the receiver's private key
-        let localUser = this._barrack.getLocalUser(sMsg.envelope.receiver)
+        let localUser = this._barrack.getLocalUser(mkm.ID.fromString(sMsg.receiver))
         let key = new mkm.RsaPrivateKey(localUser.privateKey).decrypt(Buffer.from(encryptedKey, 'base64'))
         return key.toString('utf-8')
     }
@@ -63,13 +63,13 @@ class Protocol implements dkd.Crypto {
 
     sign(sMsg: dkd.SecureMessage, data: string, sender: string): string {
         let user = this._barrack.getLocalUser(mkm.ID.fromString(sender))
-        console.debug(`sign ${data} ${user.privateKey.data}`)
+        // console.debug(`sign ${data} ${user.privateKey.data}`)
         return new mkm.RsaPrivateKey(user.privateKey).sign(Buffer.from(data, 'utf-8')).toString('base64')
     }
 
     verify(rMsg: dkd.ReliableMessage, data: string, signature: string, sender: string): boolean {
         let user = this._barrack.getUser(mkm.ID.fromString(sender))
-        console.debug(`verify ${data} ${user.publicKey.data} ${signature}`)
+        // console.debug(`verify ${data} ${user.publicKey.data} ${signature}`)
         return new mkm.RsaPublicKey(user.publicKey).verify(Buffer.from(data, 'utf-8'), Buffer.from(signature, 'base64'))
     }
 
