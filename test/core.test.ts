@@ -5,6 +5,8 @@ import { Content } from '../src/protocols/contents'
 import { Station } from '../src/network/station'
 import { Barrack } from '../src/core/barrack';
 
+const barrack = Barrack.getInstance()
+
 class EmptyStation implements Station, TransceiverDelegate {
     identifier = mkm.ID.fromString("gsp-s001@x5Zh9ixt8ECr59XLye1y5WWfaX4fcoaaSC");
     host = "127.0.0.1"
@@ -98,6 +100,10 @@ describe('core.ts', () => {
             privateKey: hulkSk
         }
 
+        barrack.addLocalUser(hulk)
+        barrack.addProfile(hulkProfile, hulk.identifier)
+        barrack.addMeta(hulkMeta, hulk.identifier)
+
         // //
         // //  Monkey King
         // //
@@ -154,13 +160,14 @@ describe('core.ts', () => {
             privateKey: mokiSk
         }
 
-        Barrack.getInstance().addLocalUser(hulk)
-        Barrack.getInstance().addProfile(hulkProfile, hulk.identifier)
-        Barrack.getInstance().addMeta(hulkMeta, hulk.identifier)
+        barrack.addLocalUser(moki)
+        barrack.addProfile(mokiProfile, moki.identifier)
+        barrack.addMeta(mokiMeta, moki.identifier)
 
-        Barrack.getInstance().addLocalUser(moki)
-        Barrack.getInstance().addProfile(mokiProfile, moki.identifier)
-        Barrack.getInstance().addMeta(mokiMeta, moki.identifier)
+        // Group
+
+        let groupId = mkm.ID.fromString('Group-1280719982@7oMeWadRw4qat2sL4mTdcQSDAqZSo7LH5G')
+        barrack.addGroup({identifier: groupId, founder: mokiId})
     })()
 
     test('transceiver', async () => {
@@ -177,5 +184,20 @@ describe('core.ts', () => {
 
         await transceiver.sendMessage(iMsg, true);
         console.log("send message finished");
+    })
+
+    test('barrack', async () => {
+        let mokiId = mkm.ID.fromString("moki@4WDfe3zZ4T7opFSi3iDAKiuTnUHjxmXekk");
+
+        let meta = barrack.getMeta(mokiId);
+        expect(meta).not.toBe(null)
+        let contact = barrack.getUser(mokiId);
+        expect(contact).not.toBe(null)
+        let user = barrack.getLocalUser(mokiId);
+        expect(user).not.toBe(null)
+
+        let groupId = mkm.ID.fromString("Group-1280719982@7oMeWadRw4qat2sL4mTdcQSDAqZSo7LH5G");
+        let group = barrack.getGroup(groupId);
+        expect(group).not.toBe(null)
     })
 })
