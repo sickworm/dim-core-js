@@ -7,14 +7,15 @@ interface DataSource {
 }
 
 class RamDataSource implements DataSource {
-    private map: Map<string, Map<string, string>>
+    private _map: Map<string, Map<string, string>>
 
     public constructor() {
-        this.map = new Map()
+        this._map = new Map()
     }
 
     get(dbName: string, id: any): any {
-        let db = this.map.get(dbName)
+        // console.debug(`RamDataSource get ${id}`)
+        let db = this._map.get(dbName)
         if (db === undefined || db === null) {
             return null
         }
@@ -32,11 +33,11 @@ class RamDataSource implements DataSource {
         return JSON.parse(db.get(id) || 'null')
     }
 
-    set(dbName: string, id: any, value: any): any {
-        let db = this.map.get(dbName)
+    set(dbName: string, id: any, value: any) {
+        let db = this._map.get(dbName)
         if (db === undefined) {
             db = new Map()
-            this.map.set(dbName, db)
+            this._map.set(dbName, db)
         }
 
         if (id.identifier) {
@@ -49,7 +50,8 @@ class RamDataSource implements DataSource {
         if (typeof id !== 'string') {
             id = JSON.stringify(id)
         }
-        return db.set(id, JSON.stringify(value))
+        db.set(id, JSON.stringify(value))
+        // console.debug(`RamDataSource set ${id} ${JSON.stringify(value)} `)
     }
 }
 
@@ -69,21 +71,25 @@ class Barrack
     }
 
     public addUser(user: mkm.User): void {
-        this._implement.set('user', user.identifier.address, user)
+        this._implement.set('user', user.identifier, user)
     }
 
     public addLocalUser(localUser: mkm.LocalUser): void {
         let user: mkm.User = { identifier: localUser.identifier, publicKey: localUser.publicKey }
-        this._implement.set('user', user.identifier.address, user)
-        this._implement.set('local_user', user.identifier.address, localUser)
+        this._implement.set('user', user.identifier, user)
+        this._implement.set('local_user', user.identifier, localUser)
     }
 
     public addGroup(group: mkm.Group): void {
-        this._implement.set('group', group.identifier.address, group)
+        this._implement.set('group', group.identifier, group)
     }
 
     public addMeta(meta: mkm.Meta, identifier: mkm.ID): void {
-        this._implement.set('meta', identifier.address, meta)
+        this._implement.set('meta', identifier, meta)
+    }
+
+    public addProfile(profile: mkm.Profile, identifier: mkm.ID): void {
+        this._implement.set('profile', identifier, profile)
     }
 
     public getUser(identifier: mkm.ID): mkm.User {

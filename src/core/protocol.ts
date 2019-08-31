@@ -4,7 +4,7 @@ import { KeyCache } from './key_cache';
 import { Barrack } from './barrack'
 import { CoreError, ArgumentError } from './error'
 
-class Protocol {
+class Protocol implements dkd.Crypto {
     private _sessionKeys: KeyCache = KeyCache.getInstance()
 
     protected _barrack: Barrack = Barrack.getInstance()
@@ -24,8 +24,9 @@ class Protocol {
         // encrypt with receiver's public key
         let data = Buffer.from(key, 'utf-8')
 
+        // TODO proper way to make the public key has function
         let encryptKey = this.getPublicKeyFromUser(receiver)
-        return encryptKey.encrypt(data).toString('base64')
+        return new mkm.RsaPublicKey(encryptKey).encrypt(data).toString('base64')
     }
 
     private getPublicKeyFromUser(userId: string): mkm.PublicKey {
@@ -45,7 +46,7 @@ class Protocol {
 
         // decrypt key data with the receiver's private key
         let localUser = this._barrack.getLocalUser(sMsg.envelope.receiver)
-        let key = localUser.privateKey.decrypt(Buffer.from(encryptedKey, 'base64'))
+        let key = new mkm.RsaPrivateKey(localUser.privateKey).decrypt(Buffer.from(encryptedKey, 'base64'))
         return key.toString('utf-8')
     }
 
@@ -62,12 +63,14 @@ class Protocol {
 
     sign(sMsg: dkd.SecureMessage, data: string, sender: string): string {
         let user = this._barrack.getLocalUser(mkm.ID.fromString(sender))
-        return user.privateKey.sign(Buffer.from(data, 'utf-8')).toString('base64')
+        console.debug(`sign ${data} ${user.privateKey.data}`)
+        return new mkm.RsaPrivateKey(user.privateKey).sign(Buffer.from(data, 'utf-8')).toString('base64')
     }
 
     verify(rMsg: dkd.ReliableMessage, data: string, signature: string, sender: string): boolean {
         let user = this._barrack.getUser(mkm.ID.fromString(sender))
-        return user.publicKey.verify(Buffer.from(data, 'utf-8'), Buffer.from(signature, 'base64'))
+        console.debug(`verify ${data} ${user.publicKey.data} ${signature}`)
+        return new mkm.RsaPublicKey(user.publicKey).verify(Buffer.from(data, 'utf-8'), Buffer.from(signature, 'base64'))
     }
 
     private static isBroadcast(msg: dkd.Message) {

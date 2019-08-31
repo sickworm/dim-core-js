@@ -2,11 +2,11 @@ import * as dkd from 'dim-dkd-js'
 import * as mkm from 'dim-mkm-js'
 
 interface Command extends dkd.Content {
-    command: string
+    readonly command: string
 }
 
 interface HistoryCommand extends Command {
-    time: number
+    readonly time: number
 }
 
 // TODO add readOnly for all data structure in dim-core
@@ -19,23 +19,23 @@ enum HandShakeCommandState {
 }
 
 interface HandShakeCommand extends Command {
-        message?: string
-        sessionKey?: string
-        state: HandShakeCommandState
+    readonly message?: string
+    readonly sessionKey?: string
+    readonly state: HandShakeCommandState
 }
 
 interface MetaCommand extends Command {
-    identifier: string // mkm.ID
-    meta: mkm.Meta
+    readonly identifier: string // mkm.ID
+    readonly meta: mkm.Meta
 }
 
 interface ProfileCommand extends Command {
-    profile: mkm.Profile
+    readonly profile: mkm.Profile
 }
 
 interface ReceiptCommand extends Command {
-    envelope: dkd.Envelope
-    signature: string
+    readonly envelope: dkd.Envelope
+    readonly signature: string
 }
 
 export { Command, HistoryCommand, MetaCommand, ProfileCommand, ReceiptCommand }
