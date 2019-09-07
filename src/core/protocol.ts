@@ -9,7 +9,7 @@ class Protocol implements dkd.Crypto {
 
     protected _barrack: Barrack = Barrack.getInstance()
 
-    getSymmetricKey(sender: mkm.ID, receiver: mkm.ID) {
+    getSymmetricKey(sender: mkm.ID, receiver: mkm.ID): mkm.SymmKey {
         return this._sessionKeys.getCipherKey(sender, receiver)
     }
 
@@ -61,16 +61,16 @@ class Protocol implements dkd.Crypto {
         return object as dkd.Content
     }
 
-    sign(sMsg: dkd.SecureMessage, data: string, sender: string): string {
-        let user = this._barrack.getLocalUser(mkm.ID.fromString(sender))
-        // console.debug(`sign ${data} ${user.privateKey.data}`)
-        return new mkm.RsaPrivateKey(user.privateKey).sign(Buffer.from(data, 'utf-8')).toString('base64')
+    sign(sMsg: dkd.SecureMessage): string {
+        let user = this._barrack.getLocalUser(mkm.ID.fromString(sMsg.sender))
+        console.debug(`sign ${sMsg.data} ${user.privateKey.data}`)
+        return new mkm.RsaPrivateKey(user.privateKey).sign(Buffer.from(sMsg.data, 'base64')).toString('base64')
     }
 
-    verify(rMsg: dkd.ReliableMessage, data: string, signature: string, sender: string): boolean {
-        let user = this._barrack.getUser(mkm.ID.fromString(sender))
+    verify(rMsg: dkd.ReliableMessage): boolean {
+        let user = this._barrack.getUser(mkm.ID.fromString(rMsg.sender))
         // console.debug(`verify ${data} ${user.publicKey.data} ${signature}`)
-        return new mkm.RsaPublicKey(user.publicKey).verify(Buffer.from(data, 'utf-8'), Buffer.from(signature, 'base64'))
+        return new mkm.RsaPublicKey(user.publicKey).verify(Buffer.from(rMsg.data, 'base64'), Buffer.from(rMsg.signature, 'base64'))
     }
 
     private static isBroadcast(msg: dkd.Message) {

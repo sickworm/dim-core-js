@@ -76,7 +76,7 @@ class Transceiver extends Protocol {
         let sMsg
         if (group == null) {
             // personal message
-            sMsg = this._transform.encrypt(iMsg, this.getSymmetricKey(sender, receiver).data)
+            sMsg = this._transform.encrypt(iMsg, JSON.stringify(this.getSymmetricKey(sender, receiver)))
         } else {
             // group message
             let groupId = group.identifier

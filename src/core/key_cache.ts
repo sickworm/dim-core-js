@@ -6,11 +6,12 @@ interface SymmKeyCreator {
     create(): mkm.SymmKey
 }
 
+// TODO use AES instead
 class PlainKey implements mkm.SymmKey {
     private static _instance = new PlainKey()
 
-    algorithm = "plain"
-    data = "plain"
+    algorithm = "PLAIN"
+    data = "PLAIN"
 
     static getInstance(): PlainKey {
         return PlainKey._instance
@@ -97,6 +98,7 @@ class KeyCache implements CipherKeyDataSource {
     }
 
     createCipherKey(data: any): mkm.SymmKey {
+        // TODO judge PLAIN and aes
         return PlainKey.getInstance()
     }
 }
