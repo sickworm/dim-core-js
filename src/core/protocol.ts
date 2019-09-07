@@ -63,7 +63,7 @@ class Protocol implements dkd.Crypto {
 
     sign(sMsg: dkd.SecureMessage): string {
         let user = this._barrack.getLocalUser(mkm.ID.fromString(sMsg.sender))
-        console.debug(`sign ${sMsg.data} ${user.privateKey.data}`)
+        // console.debug(`sign ${sMsg.data} ${user.privateKey.data}`)
         return new mkm.RsaPrivateKey(user.privateKey).sign(Buffer.from(sMsg.data, 'base64')).toString('base64')
     }
 
