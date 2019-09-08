@@ -1,6 +1,6 @@
 import * as mkm from "dim-mkm-js"
 import * as dkd from "dim-dkd-js"
-import { CoreError, StorageError } from "./error";
+import { CoreError, ProtocolError } from "./error";
 
 interface SymmKeyCreator {
     create(): mkm.SymmKey
@@ -97,9 +97,21 @@ class KeyCache implements CipherKeyDataSource {
         return key
     }
 
-    createCipherKey(data: any): mkm.SymmKey {
-        // TODO judge PLAIN and aes
-        return PlainKey.getInstance()
+    createCipherKey(data: string): mkm.SymmKey {
+        let json = JSON.parse(data)
+        this.checkSymmKeyData(json)
+        let key: mkm.SymmKey
+        switch (json.algorithm) {
+            case 'PLAIN': return PlainKey.getInstance()
+            case 'AES': return new mkm.AesSymmKey(json)
+            default: throw new CoreError(ProtocolError.SECURE_KEY_FORMAT_INVALID, `key data: ${JSON.stringify(data)}`)
+        }
+    }
+
+    private checkSymmKeyData(data: any) {
+        if (!data.algorithm || !data.data) {
+            throw new CoreError(ProtocolError.SECURE_KEY_FORMAT_INVALID, `key data: ${JSON.stringify(data)}`)
+        }
     }
 }
 

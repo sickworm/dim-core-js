@@ -1,24 +1,18 @@
 import * as dkd from 'dim-dkd-js'
 import * as mkm from 'dim-mkm-js'
-import { CoreError, ArgumentError, StorageError } from './error'
-import { Barrack } from './barrack';
-import { AesSymmKey, PublicKey } from 'dim-mkm-js';
-import { deprecate } from 'util';
-import { verify } from 'crypto';
-import { Protocol} from './protocol'
+import { Protocol } from './protocol'
+import { ReliableMessage } from 'dim-dkd-js'
 
 class Transceiver extends Protocol {
     private _transform: dkd.Transform
-    private _delegate: TransceiverDelegate
 
-    constructor(delegate: TransceiverDelegate) {
+    constructor() {
         super()
-        this._delegate = delegate
         this._transform = new dkd.Transform(this)
     }
 
     /**
-     *  Send message (secured + certified) to target station
+     * Send message (secured + certified) to target station
      *
      * @param iMsg - instant message
      * @param callback - callback function
@@ -27,28 +21,22 @@ class Transceiver extends Protocol {
      * @throws NoSuchFieldException when 'group' not found
      * @throws ClassNotFoundException when key algorithm not supported
      */
-    async sendMessage(iMsg: dkd.InstantMessage, split: boolean) {
+    packageMessage(iMsg: dkd.InstantMessage, split: boolean = true): ReliableMessage[] {
         let receiver = mkm.ID.fromString(iMsg.receiver)
         let groupId = iMsg.content.group && mkm.ID.fromString(iMsg.content.group)
         let rMsg = this.encryptAndSignMessage(iMsg)
         
-        let success = false
         if (split && receiver.type.isGroup()) {
             let members = groupId && this._barrack.getMembers(groupId)
             if (!members || members.length <= 0) {
                 throw new Error(`receiver group ${receiver.toString()} members invalid`)
             }
-            let rels = this._transform.split(rMsg, members.map(m => m.toString()))
-            return rels.map(rMsg => this.sendSingleMessage(rMsg))
+            let rMsgs = this._transform.split(rMsg, members.map(m => m.toString()))
+            // TODO optimize send group message
+            return rMsgs
         } else {
-            return [this.sendSingleMessage(rMsg)]
+            return [rMsg]
         }
-    }
-
-    async sendSingleMessage(rMsg: dkd.ReliableMessage) {
-        let json = JSON.stringify(rMsg)
-        let data = Buffer.from(json, 'utf-8')
-        return this._delegate.sendPackage(data)
     }
 
     /**
@@ -87,7 +75,9 @@ class Transceiver extends Protocol {
                 let group = this._barrack.getGroup(groupId)
                 let members = this._barrack.getMembers(groupId)
             }
-            sMsg = this._transform.encrypt(iMsg, this.getSymmetricKey(sender, groupId).data, members.map(m => m.toString()))
+            sMsg = this._transform.encrypt(iMsg,
+                JSON.stringify(this.getSymmetricKey(sender, receiver)),
+                members.map(m => m.toString()))
         }
 
         // 2. sign 'data' by sender

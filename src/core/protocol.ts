@@ -13,11 +13,11 @@ class Protocol implements dkd.Crypto {
         return this._sessionKeys.getCipherKey(sender, receiver)
     }
 
-    createSymmetricKey(data: any) {
+    createSymmetricKey(data: string) {
         return this._sessionKeys.createCipherKey(data)
     }
 
-    encryptKey(iMsg: dkd.InstantMessage, key: string, receiver: string): string {
+    encryptKey(iMsg: dkd.InstantMessage, key: string): string {
         Protocol.checkNotBroadcast(iMsg)
         // TODO: check whether support reused key
         
@@ -25,7 +25,7 @@ class Protocol implements dkd.Crypto {
         let data = Buffer.from(key, 'utf-8')
 
         // TODO proper way to make the public key has function
-        let encryptKey = this.getPublicKeyFromUser(receiver)
+        let encryptKey = this.getPublicKeyFromUser(iMsg.receiver)
         return new mkm.RsaPublicKey(encryptKey).encrypt(data).toString('base64')
     }
 
@@ -34,25 +34,26 @@ class Protocol implements dkd.Crypto {
         return user.publicKey
     }
     
-    encryptContent(iMsg: dkd.InstantMessage, content: dkd.Content, key: string): string {
+    encryptContent(iMsg: dkd.InstantMessage, key: string): string {
+        // console.debug(`encryptContent iMsg: ${JSON.stringify(iMsg)}\nkey: ${key}`)
         let symmKey = this.createSymmetricKey(key)
-        return symmKey.encrypt(Buffer.from(JSON.stringify(content), 'utf-8')).toString('base64')
+        return symmKey.encrypt(Buffer.from(JSON.stringify(iMsg.content), 'utf-8')).toString('base64')
     }
 
-    decryptKey(sMsg: dkd.SecureMessage, encryptedKey: string, sender: string, receiver: string, group: string | undefined): string {
+    decryptKey(sMsg: dkd.SecureMessage, encryptedKey: string, group: string | undefined): string {
         Protocol.checkNotBroadcast(sMsg)
-        let from = mkm.ID.fromString(sender)
-        let to = mkm.ID.fromString(receiver)
-
         // decrypt key data with the receiver's private key
         let localUser = this._barrack.getLocalUser(mkm.ID.fromString(sMsg.receiver))
         let key = new mkm.RsaPrivateKey(localUser.privateKey).decrypt(Buffer.from(encryptedKey, 'base64'))
+        // console.debug(`decryptKey sMsg: ${JSON.stringify(sMsg)}\nkey: ${key.toString('utf-8')}`)
         return key.toString('utf-8')
     }
 
-    decryptContent(sMsg: dkd.SecureMessage, encryptedContent: string, key: string): dkd.Content {
+    decryptContent(sMsg: dkd.SecureMessage, key: string): dkd.Content {
+        // console.debug(`decryptContent sMsg: ${JSON.stringify(sMsg)}\nkey: ${key}`)
         let symmKey = this.createSymmetricKey(key)
-        let contentString = symmKey.decrypt(Buffer.from(encryptedContent, 'base64')).toString('utf-8')
+        let contentString = symmKey.decrypt(Buffer.from(sMsg.data, 'base64')).toString('utf-8')
+        // console.debug(`decryptContent contentString: ${contentString}`)
         let object = JSON.parse(contentString)
         // TODO refactor
         if (!object || !object.type || !object.serialNumber) {
