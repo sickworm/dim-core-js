@@ -116,13 +116,13 @@ class KeyCache implements CipherKeyDataSource {
         switch (json.algorithm) {
             case 'PLAIN': return PlainKey.getInstance()
             case 'AES': return new mkm.AesSymmKey(json)
-            default: throw new CoreError(ProtocolError.SECURE_KEY_FORMAT_INVALID, `key data: ${JSON.stringify(data)}`)
+            default: throw new CoreError(ProtocolError.SECURE_KEY_FORMAT_INVALID, `build key data: ${JSON.stringify(data)}`)
         }
     }
 
     private checkSymmKeyData(data: any) {
         if (!data.algorithm || !data.data) {
-            throw new CoreError(ProtocolError.SECURE_KEY_FORMAT_INVALID, `key data: ${JSON.stringify(data)}`)
+            throw new CoreError(ProtocolError.SECURE_KEY_FORMAT_INVALID, `check key data: ${JSON.stringify(data)}`)
         }
     }
 }
