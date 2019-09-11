@@ -2,11 +2,8 @@ import * as mkm from "dim-mkm-js"
 import * as dkd from "dim-dkd-js"
 import { CoreError, ProtocolError } from "./error";
 
-interface SymmKeyCreator {
-    create(): mkm.SymmKey
-}
+type SymmKeyType = 'PLAIN' | 'AES'
 
-// TODO use AES instead
 class PlainKey implements mkm.SymmKey {
     private static _instance = new PlainKey()
 
@@ -40,16 +37,20 @@ interface CipherKeyDataSource {
 }
 
 interface CipherKeyStorage {
-    get(sender: mkm.ID, receiver: mkm.ID): mkm.SymmKey | null
-    set(sender: mkm.ID, receiver: mkm.ID, key: mkm.SymmKey): void
+    get(keyType: SymmKeyType, sender: mkm.ID, receiver: mkm.ID): mkm.SymmKey | null
+    set(keyType: SymmKeyType, sender: mkm.ID, receiver: mkm.ID, key: mkm.SymmKey): void
     refresh(key: mkm.SymmKey): void
 }
 
 class CipherKeyStorageRamImpl implements CipherKeyStorage {
-    private _map: Map<string, Map<string, mkm.SymmKey>> = new Map()
+    private _map: Map<SymmKeyType, Map<string, Map<string, mkm.SymmKey>>> = new Map()
 
-    get(sender: mkm.ID, receiver: mkm.ID): mkm.SymmKey | null {
-        let senderKeys = this._map.get(sender.string)
+    get(keyType: SymmKeyType,sender: mkm.ID, receiver: mkm.ID): mkm.SymmKey | null {
+        let keys = this._map.get(keyType)
+        if (!keys) {
+            return null
+        }
+        let senderKeys = keys.get(sender.string)
         if (!senderKeys) {
             return null
         }
@@ -60,11 +61,16 @@ class CipherKeyStorageRamImpl implements CipherKeyStorage {
         return key
     }
 
-    set(sender: mkm.ID, receiver: mkm.ID, key: mkm.SymmKey): void {
-        let senderKeys = this._map.get(sender.string)
+    set(keyType: SymmKeyType,sender: mkm.ID, receiver: mkm.ID, key: mkm.SymmKey): void {
+        let keys = this._map.get(keyType)
+        if (!keys) {
+            keys = new Map()
+            this._map.set(keyType, keys)
+        }
+        let senderKeys = keys.get(sender.string)
         if (!senderKeys) {
             senderKeys = new Map()
-            this._map.set(sender.string, senderKeys)
+            keys.set(sender.string, senderKeys)
         }
         senderKeys.set(receiver.string, key)
     }
@@ -81,26 +87,32 @@ class KeyCache implements CipherKeyDataSource {
     }
 
     private _storage = new CipherKeyStorageRamImpl()
-    private _crypto: SymmKeyCreator = { create: function() { return PlainKey.getInstance() }}
 
     private constructor() {
     }
 
-    getCipherKey(sender: mkm.ID, receiver: mkm.ID): mkm.SymmKey {
-        let key = this._storage.get(sender, receiver)
+    getCipherKey(sender: mkm.ID, receiver: mkm.ID, type: SymmKeyType = 'AES'): mkm.SymmKey {
+        let key = this._storage.get(type, sender, receiver)
         if (key == null) {
-            key = this._crypto.create()
-            this._storage.set(sender, receiver, key)
+            key = this.createCipherKey(type)
+            this._storage.set(type, sender, receiver, key)
         } else {
             this._storage.refresh(key)
         }
         return key
     }
 
-    createCipherKey(data: string): mkm.SymmKey {
+    createCipherKey(type: SymmKeyType) {
+        switch (type) {
+            case 'PLAIN': return PlainKey.getInstance()
+            case 'AES': return mkm.AesSymmKey.create()
+            default: throw new CoreError(ProtocolError.SECURE_KEY_FORMAT_INVALID, `key type: ${type}`)
+        }
+    }
+
+    buildCipherKey(data: string): mkm.SymmKey {
         let json = JSON.parse(data)
         this.checkSymmKeyData(json)
-        let key: mkm.SymmKey
         switch (json.algorithm) {
             case 'PLAIN': return PlainKey.getInstance()
             case 'AES': return new mkm.AesSymmKey(json)

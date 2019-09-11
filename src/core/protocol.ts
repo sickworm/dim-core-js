@@ -14,7 +14,7 @@ class Protocol implements dkd.Crypto {
     }
 
     createSymmetricKey(data: string) {
-        return this._sessionKeys.createCipherKey(data)
+        return this._sessionKeys.buildCipherKey(data)
     }
 
     encryptKey(iMsg: dkd.InstantMessage, key: string): string {
@@ -35,7 +35,7 @@ class Protocol implements dkd.Crypto {
     }
     
     encryptContent(iMsg: dkd.InstantMessage, key: string): string {
-        // console.debug(`encryptContent iMsg: ${JSON.stringify(iMsg)}\nkey: ${key}`)
+        console.debug(`encryptContent iMsg: ${JSON.stringify(iMsg)}\nkey: ${key}`)
         let symmKey = this.createSymmetricKey(key)
         return symmKey.encrypt(Buffer.from(JSON.stringify(iMsg.content), 'utf-8')).toString('base64')
     }
