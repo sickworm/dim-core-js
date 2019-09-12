@@ -2,8 +2,9 @@ import * as dkd from 'dim-dkd-js'
 import * as mkm from 'dim-mkm-js'
 import { Command, HistoryCommand } from './commands'
 
+// TODO write a convert tools to convert between mkm.ID and string
 interface GroupCommand extends Command {
-    group: mkm.ID
+    group: string
 }
 
 interface JoinCommand extends GroupCommand {
@@ -16,16 +17,16 @@ interface QueryCommand extends GroupCommand {
 }
 
 interface InviteCommand extends GroupCommand {
-    members: mkm.ID[]
+    members: string[]
 }
 
 // kick command
 interface ExpelCommand extends GroupCommand {
-    members: mkm.ID[]
+    members: string[]
 }
 
 interface ResetCommand extends GroupCommand {
-    members: mkm.ID[]
+    members: string[]
 }
 
 module GroupCommand {
@@ -49,27 +50,27 @@ module GroupCommand {
         RESIGN   = "resign"
     }
 
-    export function join(group: mkm.ID): JoinCommand {
+    export function join(group: string): JoinCommand {
         return create({
             group: group,
             command: Type.JOIN
         })
     }
 
-    export function quit(group: mkm.ID): QuitCommand {
+    export function quit(group: string): QuitCommand {
         return create({
             group: group,
             command: Type.QUIT
         })
     }
 
-    export function query(group: mkm.ID): QueryCommand {
+    export function query(group: string): QueryCommand {
         return create({
             group: group,
             command: Type.QUERY
         })
     }
-    export function invite(group: mkm.ID, members: mkm.ID[]): InviteCommand {
+    export function invite(group: string, members: string[]): InviteCommand {
         return create({
             group: group,
             command: Type.INVITE,
@@ -77,7 +78,7 @@ module GroupCommand {
         })
     }
 
-    export function expel(group: mkm.ID, members: mkm.ID[]): ExpelCommand {
+    export function expel(group: string, members: string[]): ExpelCommand {
         return create({
             group: group,
             command: Type.EXPEL,
@@ -85,7 +86,7 @@ module GroupCommand {
         })
     }
 
-    export function reset(group: mkm.ID, members: mkm.ID[]): ResetCommand {
+    export function reset(group: string, members: string[]): ResetCommand {
         return create({
             group: group,
             command: Type.RESET,
@@ -96,7 +97,7 @@ module GroupCommand {
     function create(object: any) {
         return Object.assign({
             type: dkd.MessageType.Command,
-            serialNumber: 123,
+            sn: mkm.Crypto.randomInt(),
         }, object)
     }
 }

@@ -2,6 +2,8 @@ import * as dkd from 'dim-dkd-js'
 import * as mkm from 'dim-mkm-js'
 import { Protocol } from './protocol'
 import { ReliableMessage } from 'dim-dkd-js'
+import { GroupCommand } from '../protocols/groups'
+import { ForwardContent } from '../protocols/contents'
 
 class Transceiver extends Protocol {
     private _transform: dkd.Transform
@@ -23,7 +25,7 @@ class Transceiver extends Protocol {
      */
     packageMessage(iMsg: dkd.InstantMessage, split: boolean = true): ReliableMessage[] {
         let receiver = mkm.ID.fromString(iMsg.receiver)
-        let groupId = iMsg.content.group && mkm.ID.fromString(iMsg.content.group)
+        let groupId = iMsg.content.hasOwnProperty('group') && mkm.ID.fromString((iMsg.content as GroupCommand).group)
         let rMsg = this.encryptAndSignMessage(iMsg)
         
         if (split && receiver.type.isGroup()) {
@@ -54,9 +56,9 @@ class Transceiver extends Protocol {
         if (receiver.type.isGroup()) {
             group = this._barrack.getGroup(receiver)
         } else {
-            let groupId = iMsg.content.group
+            let groupId = (iMsg.content as GroupCommand).group
             if (groupId) {
-                group = this._barrack.getGroup(groupId)
+                group = this._barrack.getGroup(mkm.ID.fromString(groupId))
             }
         }
 
@@ -139,8 +141,8 @@ class Transceiver extends Protocol {
         if (iMsg.content.type === dkd.MessageType.Forward) {
             // do it again to drop the wrapper,
             // the secret inside the content is the real message
-            let content = iMsg.content.forward
-            rMsg = content.forwardMessage
+            let content = iMsg.content as ForwardContent
+            rMsg = content.forward
             return this.verifyAndDecryptMessageDeprecate(rMsg, users)
         }
 

@@ -56,8 +56,8 @@ class Protocol implements dkd.Crypto {
         // console.debug(`decryptContent contentString: ${contentString}`)
         let object = JSON.parse(contentString)
         // TODO refactor
-        if (!object || !object.type || !object.serialNumber) {
-            throw new CoreError(ArgumentError.INVALID_CONTENT)
+        if (!object || !object.type || !object.sn) {
+            throw new CoreError(ArgumentError.INVALID_CONTENT, `object ${JSON.stringify(object)}`)
         }
         return object as dkd.Content
     }

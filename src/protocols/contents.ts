@@ -1,4 +1,5 @@
 import * as dkd from "dim-dkd-js"
+import * as mkm from "dim-mkm-js"
 
 // dkd.MessageType
 //
@@ -60,11 +61,15 @@ interface VideoContentData extends FileContentData {
 interface VideoContent extends dkd.Content, ImageContentData {
 }
 
+interface ForwardContent extends dkd.Content {
+    forward: dkd.ReliableMessage
+}
+
 module Content {
     export function text(text: string): TextContent {
         return {
             type: dkd.MessageType.Text,
-            serialNumber: 123,
+            sn: mkm.Crypto.randomInt(),
             text
         }
     }
@@ -72,37 +77,45 @@ module Content {
     export function page(pageData: PageContentData): PageContent {
         return Object.assign({
             type: dkd.MessageType.Text,
-            serialNumber: 123,
+            sn: mkm.Crypto.randomInt()
         }, pageData)
     }
 
     export function file(fileData: FileContentData): FileContent {
         return Object.assign({
             type: dkd.MessageType.File,
-            serialNumber: 123,
+            sn: mkm.Crypto.randomInt()
         }, fileData)
     }
 
     export function audio(fileData: FileContentData): FileContent {
         return Object.assign({
             type: dkd.MessageType.Audio,
-            serialNumber: 123,
+            sn: mkm.Crypto.randomInt()
         }, fileData)
     }
 
     export function image(fileData: ImageContentData): FileContent {
         return Object.assign({
             type: dkd.MessageType.Image,
-            serialNumber: 123,
+            sn: mkm.Crypto.randomInt()
         }, fileData)
     }
 
     export function video(fileData: VideoContentData): FileContent {
         return Object.assign({
             type: dkd.MessageType.Video,
-            serialNumber: 123,
+            sn: mkm.Crypto.randomInt()
         }, fileData)
+    }
+
+    export function forward(message: dkd.ReliableMessage): ForwardContent {
+        return {
+            type: dkd.MessageType.Forward,
+            sn: mkm.Crypto.randomInt(),
+            forward: message
+        }
     }
 }
 
-export { Content, TextContent, FileContent, AudioContent, ImageContent, VideoContent }
+export { Content, TextContent, FileContent, AudioContent, ImageContent, VideoContent, ForwardContent }

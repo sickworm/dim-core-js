@@ -38,4 +38,12 @@ interface ReceiptCommand extends Command {
     readonly signature: string
 }
 
+interface SearchCommand extends Command {
+    readonly signature: string
+}
+
+// module Command {
+//     export 
+// }
+
 export { Command, HistoryCommand, MetaCommand, ProfileCommand, ReceiptCommand }
